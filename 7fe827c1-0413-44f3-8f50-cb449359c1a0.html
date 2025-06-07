@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Defender</title>
+    <base target="_self">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@preline/preline@2.0.0/dist/preline.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes enemyMove {
+            from { left: 100%; }
+            to { left: -100px; }
+        }
+        .enemy {
+            animation: enemyMove linear infinite;
+            animation-duration: 10s;
+        }
+        .correct-answer {
+            background-color: #4ade80 !important;
+            transform: scale(1.05);
+        }
+        .wrong-answer {
+            background-color: #f87171 !important;
+            transform: scale(0.95);
+        }
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">Math Defender</h1>
+            <div class="flex items-center space-x-4">
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                    <span class="font-bold">Level:</span> <span id="level">1</span>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                    <span class="font-bold">Score:</span> <span id="score">0</span>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                    <span class="font-bold">Lives:</span> <span id="lives">3</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="relative bg-gray-200 dark:bg-gray-700 rounded-xl p-4 h-64 mb-8 overflow-hidden">
+            <div id="game-area" class="relative h-full">
+                <div id="castle" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-16 h-16 bg-gray-800 dark:bg-gray-900 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-fort-awesome text-2xl text-yellow-500"></i>
+                </div>
+                <div id="enemy-container"></div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-center" id="question">Solve the problem to defeat the enemy!</h2>
+            <div class="grid grid-cols-2 gap-4" id="answers">
+                <!-- Answers will be generated here -->
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button id="start-btn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-all">
+                Start Game
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            level: 1,
+            score: 0,
+            lives: 3,
+            gameActive: false,
+            currentProblem: null,
+            enemies: [],
+            enemySpeed: 10000,
+            spawnInterval: null
+        };
+
+        // DOM elements
+        const levelEl = document.getElementById('level');
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const gameArea = document.getElementById('game-area');
+        const enemyContainer = document.getElementById('enemy-container');
+        const questionEl = document.getElementById('question');
+        const answersEl = document.getElementById('answers');
+        const startBtn = document.getElementById('start-btn');
+
+        // Math problems generator
+        function generateProblem() {
+            const operations = ['+', '-', '*'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            let num1, num2, answer;
+
+            switch(operation) {
+                case '+':
+                    num1 = Math.floor(Math.random() * 10 * gameState.level);
+                    num2 = Math.floor(Math.random() * 10 * gameState.level);
+                    answer = num1 + num2;
+                    break;
+                case '-':
+                    num1 = Math.floor(Math.random() * 10 * gameState.level);
+                    num2 = Math.floor(Math.random() * num1);
+                    answer = num1 - num2;
+                    break;
+                case '*':
+                    num1 = Math.floor(Math.random() * 5 * gameState.level) + 1;
+                    num2 = Math.floor(Math.random() * 5 * gameState.level) + 1;
+                    answer = num1 * num2;
+                    break;
+            }
+
+            const wrongAnswers = [];
+            while(wrongAnswers.length < 3) {
+                const wrongAnswer = answer + (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                if(wrongAnswer !== answer && !wrongAnswers.includes(wrongAnswer)) {
+                    wrongAnswers.push(wrongAnswer);
+                }
+            }
+
+            const allAnswers = [answer, ...wrongAnswers];
+            shuffleArray(allAnswers);
+
+            gameState.currentProblem = {
+                question: `${num1} ${operation} ${num2}`,
+                answer: answer,
+                answers: allAnswers
+            };
+
+            return gameState.currentProblem;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Game functions
+        function startGame() {
+            gameState.gameActive = true;
+            gameState.level = 1;
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.enemySpeed = 10000;
+            
+            updateUI();
+            startBtn.textContent = 'Restart Game';
+            
+            // Clear any existing enemies
+            enemyContainer.innerHTML = '';
+            gameState.enemies = [];
+            
+            // Start spawning enemies
+            gameState.spawnInterval = setInterval(spawnEnemy, 2000);
+            
+            // Show first problem
+            showProblem();
+        }
+
+        function spawnEnemy() {
+            if (!gameState.gameActive) return;
+            
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy absolute top-1/2 transform -translate-y-1/2 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center';
+            enemy.style.left = '100%';
+            enemy.style.animationDuration = `${gameState.enemySpeed}ms`;
+            
+            const enemyType = Math.random() > 0.7 ? 'fa-skull' : 'fa-ghost';
+            enemy.innerHTML = `<i class="fas ${enemyType} text-white"></i>`;
+            
+            enemy.dataset.id = Date.now();
+            gameState.enemies.push(enemy.dataset.id);
+            
+            enemy.addEventListener('animationend', () => {
+                if (gameState.gameActive) {
+                    enemy.remove();
+                    loseLife();
+                }
+            });
+            
+            enemyContainer.appendChild(enemy);
+        }
+
+        function showProblem() {
+            const problem = generateProblem();
+            questionEl.textContent = problem.question;
+            
+            answersEl.innerHTML = '';
+            problem.answers.forEach((answer, index) => {
+                const answerBtn = document.createElement('button');
+                answerBtn.className = 'p-4 bg-gray-200 dark:bg-gray-700 rounded-lg font-bold text-lg transition-all hover:bg-gray-300 dark:hover:bg-gray-600';
+                answerBtn.textContent = answer;
+                answerBtn.addEventListener('click', () => checkAnswer(answer));
+                answersEl.appendChild(answerBtn);
+            });
+        }
+
+        function checkAnswer(selectedAnswer) {
+            if (!gameState.gameActive) return;
+            
+            const answerButtons = answersEl.querySelectorAll('button');
+            const correctAnswer = gameState.currentProblem.answer;
+            
+            answerButtons.forEach(button => {
+                button.disabled = true;
+                if (parseInt(button.textContent) === correctAnswer) {
+                    button.classList.add('correct-answer');
+                } else if (parseInt(button.textContent) === selectedAnswer && selectedAnswer !== correctAnswer) {
+                    button.classList.add('wrong-answer');
+                }
+            });
+            
+            if (selectedAnswer === correctAnswer) {
+                gameState.score += 10 * gameState.level;
+                destroyEnemy();
+                
+                // Level up every 5 correct answers
+                if (gameState.score >= gameState.level * 50) {
+                    levelUp();
+                }
+            } else {
+                loseLife();
+            }
+            
+            updateUI();
+            
+            // Show next problem after delay
+            setTimeout(() => {
+                if (gameState.gameActive) {
+                    showProblem();
+                }
+            }, 1000);
+        }
+
+        function destroyEnemy() {
+            if (gameState.enemies.length > 0) {
+                const enemyId = gameState.enemies.shift();
+                const enemy = document.querySelector(`[data-id="${enemyId}"]`);
+                if (enemy) {
+                    enemy.style.animationPlayState = 'paused';
+                    enemy.innerHTML = '<i class="fas fa-explosion text-yellow-400"></i>';
+                    setTimeout(() => enemy.remove(), 300);
+                }
+            }
+        }
+
+        function levelUp() {
+            gameState.level++;
+            gameState.enemySpeed = Math.max(2000, gameState.enemySpeed - 1000);
+            updateUI();
+            
+            // Flash the level indicator
+            levelEl.classList.add('animate-pulse');
+            setTimeout(() => levelEl.classList.remove('animate-pulse'), 1000);
+        }
+
+        function loseLife() {
+            gameState.lives--;
+            updateUI();
+            
+            if (gameState.lives <= 0) {
+                endGame();
+            } else {
+                // Flash the lives indicator
+                livesEl.classList.add('animate-pulse', 'text-red-500');
+                setTimeout(() => livesEl.classList.remove('animate-pulse', 'text-red-500'), 1000);
+            }
+        }
+
+        function endGame() {
+            gameState.gameActive = false;
+            clearInterval(gameState.spawnInterval);
+            
+            // Remove all enemies
+            enemyContainer.innerHTML = '';
+            gameState.enemies = [];
+            
+            questionEl.textContent = `Game Over! Final Score: ${gameState.score}`;
+            answersEl.innerHTML = '';
+            
+            startBtn.textContent = 'Play Again';
+        }
+
+        function updateUI() {
+            levelEl.textContent = gameState.level;
+            scoreEl.textContent = gameState.score;
+            livesEl.textContent = gameState.lives;
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+
+        // Prevent default anchor behavior
+        document.querySelectorAll('a').forEach(anchor => {
+            anchor.addEventListener('click', e => e.preventDefault());
+        });
+    </script>
+</body>
+</html>
