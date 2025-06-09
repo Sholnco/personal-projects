@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matthew Olushola Oke - Cover</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff; /* Light blue background */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .cover-container {
+            width: 80%;
+            max-width: 800px;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2a5c8d; /* Dark blue */
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            color: #4a90e2; /* Medium blue */
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #555;
+        }
+        
+        .contact-list {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .contact-list li {
+            margin-bottom: 15px;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .contact-list li:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4a90e2;
+            border-radius: 3px;
+        }
+        
+        .contact-list li[data-checked="true"]:before {
+            background-color: #4a90e2;
+        }
+    </style>
+</head>
+<body>
+    <div class="cover-container">
+        <h1>MATTHEW OLUSHOLA OKE</h1>
+        <h2>Medical Researcher // Techpreneur</h2>
+        
+        <p class="description">
+            A health-focused innovator who merges medical research with technology to create impactful, scalable healthcare solutions.
+        </p>
+        
+        <ul class="contact-list">
+            <li data-checked="false">08130558720</li>
+            <li data-checked="true">matthewolushola@gmail.com</li>
+            <li data-checked="false">www.motechconnect.com</li>
+        </ul>
+    </div>
+</body>
+</html>
